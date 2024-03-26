@@ -8,13 +8,16 @@
 import numpy as np
 import torch
 
+
 import gymnasium as gym
-from stable_baselines3 import PPO, DDPG, SAC, A2C
+from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 import matplotlib.pyplot as plt
 
 # Custom Pendulum Environment
+
+
 import sys
 sys.path.append('../')  
 from Gymnasium_modified.gymnasium.envs.classic_control.pendulum import PendulumEnv
