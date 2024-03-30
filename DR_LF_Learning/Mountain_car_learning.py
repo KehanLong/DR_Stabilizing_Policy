@@ -29,9 +29,6 @@ def generate_uncertainty_samples(num_samples=4):
     - A tensor of shape (num_samples, 1) containing samples of xi.
     """
     xi_samples = torch.normal(mean=0.0, std = 0.0002, size = (num_samples,))
-    #xi_m_samples = torch.normal(mean=0.04, std=0.04, size=(num_samples,))
-    #xi_b_samples = torch.FloatTensor(num_samples).uniform_(-0.03, 0.02)
-    #xi_b_samples = torch.normal(mean=0.0, std=0.02, size=(num_samples,))
 
     return xi_samples
 
@@ -51,9 +48,6 @@ def train_clf_nn_controller():
 
     learning_rate = 0.003
     loss_threshold = 1e-3
-    batch_size = 128
-    
-    
     
     
     xi_samples_num = 3
@@ -86,7 +80,7 @@ def train_clf_nn_controller():
     position = torch.Tensor(num_position).uniform_(-2.0, 2.0)
     # For angular velocities
     num_velocity = 40
-    velocity = torch.Tensor(num_velocity).uniform_(-1.0, 1.0)  
+    velocity = torch.Tensor(num_velocity).uniform_(-0.1, 0.1)  
 
     
     
@@ -132,15 +126,15 @@ def train_clf_nn_controller():
         # warm initialization for dro
         if model_type == 'dro':
             # Load the trained weights from the nominal model
-            net_nominal.load_state_dict(torch.load("saved_models/joint_clf_controller_models/mountain_car/baseline_asympto_joint_clf_1.pt"))
-            net_policy.load_state_dict(torch.load("saved_models/joint_clf_controller_models/mountain_car/baseline_asympto_controller_1.pt"))
+            net_nominal.load_state_dict(torch.load("saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt"))
+            net_policy.load_state_dict(torch.load("saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt"))
 
         
         # Instantiate the controller with specific control bounds
         if model_type == 'nominal':
-            clf_controller = MountainCar_Joint_Controller(net_nominal, net_policy, relaxation_penalty=0.2, power=0.0015, control_bound=1.5)
+            clf_controller = MountainCar_Joint_Controller(net_nominal, net_policy, relaxation_penalty=0.1, power=0.0015, control_bound=2.0)
         else:  # 'dro'
-            clf_controller = MountainCar_Joint_Controller(net_nominal, net_policy, relaxation_penalty=0.2, power=0.0015, control_bound=2.0)
+            clf_controller = MountainCar_Joint_Controller(net_nominal, net_policy, relaxation_penalty=0.1, power=0.0015, control_bound=2.0)
     
         optimizer = torch.optim.Adam(list(net_nominal.parameters()) + list(net_policy.parameters()), lr=learning_rate, betas=(0.9, 0.999))
 
@@ -170,11 +164,11 @@ def train_clf_nn_controller():
 
         # Saving model parameters
         if model_type == 'nominal':
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_asympto_joint_clf_1.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_asympto_controller_1.pt")
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt")
         else:  # 'dro'
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_joint_clf_1.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller_1.pt")
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller.pt")
             
             
             
@@ -287,14 +281,6 @@ def evaluate_clf_controller(clf_controller, file_prefix='Mountain'):
     plt.savefig("Mountain_car_controller.png", dpi=300)
     plt.show()
 
-    
-    origin = [np.sin(np.pi/6), np.cos(np.pi/6), 0]
-    origin_tensor = torch.tensor(origin, dtype=torch.float32).unsqueeze(0).to(device)
-    
-    origin_test = clf_controller.compute_policy(origin_tensor)
-    
-    print('what is control here:', origin_test)
-    
 
     
 

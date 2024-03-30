@@ -109,12 +109,12 @@ class Continuous_MountainCarEnv(gym.Env):
         "render_fps": 30,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, power = 0.0015, goal_velocity=0, controller = 'Baseline'):
+    def __init__(self, render_mode: Optional[str] = None, power = 0.0015, goal_velocity=0, controller = 'Baseline', initial_state = np.array([-math.pi/6, 0])):
         self.min_action = -2.0
         self.max_action = 2.0
-        self.min_position = -1
-        self.max_position = 1.5
-        self.max_speed = 1.0
+        self.min_position = -5
+        self.max_position = 5
+        self.max_speed = 0.5
         self.goal_position = (
             math.pi/6 # was 0.5 in gymnasium, 0.45 in Arnaud de Broissia's version
         )
@@ -122,6 +122,9 @@ class Continuous_MountainCarEnv(gym.Env):
         self.power = power
         
         self.controller_type = controller
+
+        self.initial_state = initial_state
+
 
         self.low_state = np.array(
             [self.min_position, -self.max_speed], dtype=np.float32
@@ -150,25 +153,27 @@ class Continuous_MountainCarEnv(gym.Env):
         velocity = self.state[1]
         force = min(max(action[0], self.min_action), self.max_action)
         
-        dt = 0.02
+        dt = 0.05
 
         velocity += (force * self.power - 0.0025 * math.cos(3 * position)) * dt
-        if velocity > self.max_speed:
-            velocity = self.max_speed
-        if velocity < -self.max_speed:
-            velocity = -self.max_speed
+        # if velocity > self.max_speed:
+        #     velocity = self.max_speed
+        # if velocity < -self.max_speed:
+        #     velocity = -self.max_speed
         position += velocity * dt
-        if position > self.max_position:
-            position = self.max_position
-        if position < self.min_position:
-            position = self.min_position
-        if position == self.min_position and velocity < 0:
-            velocity = 0
+        # if position > self.max_position:
+        #     position = self.max_position
+        # if position < self.min_position:
+        #     position = self.min_position
+        # if position == self.min_position and velocity < 0:
+        #     velocity = 0
 
         # Convert a possible numpy bool to a Python bool.
         terminated = bool(
             position >= self.goal_position and velocity >= self.goal_velocity
         )
+
+        terminated = False
 
         reward = 0
         if terminated:
@@ -186,9 +191,9 @@ class Continuous_MountainCarEnv(gym.Env):
         # Note that if you use custom reset bounds, it may lead to out-of-bound
         # state/observations.
         low, high = utils.maybe_parse_reset_bounds(options, -0.6, -0.4)
-        self.state = np.array([self.np_random.uniform(low=low, high=high), 0])
+        #self.state = np.array([self.np_random.uniform(low=low, high=high), 0])
         
-        self.state = np.array([-math.pi/6, 0])
+        self.state = self.initial_state
 
         if self.render_mode == "human":
             self.render()

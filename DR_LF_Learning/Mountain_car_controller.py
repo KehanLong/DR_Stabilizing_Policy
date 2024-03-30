@@ -11,7 +11,7 @@ import numpy as np
  
     
 class MountainCar_Joint_Controller:
-    def __init__(self, net, net_policy, relaxation_penalty = 1.0, power = 0.0015, control_bound = 1.7):
+    def __init__(self, net, net_policy, relaxation_penalty = 1.0, power = 0.0015, control_bound = 2.0):
         self.net = net
         self.net_policy = net_policy
         
