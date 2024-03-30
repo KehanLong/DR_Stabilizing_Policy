@@ -58,7 +58,7 @@ class Cart_Pole_Joint_Controller:
     
         return f_x, g_x
     
-    def compute_policy(self, x, min_val=-1500.0, max_val=1500.0):
+    def compute_policy(self, x, min_val=-50.0, max_val=50.0):
         """
         Computes the control policy and enforces constraints on the output.
     
@@ -158,10 +158,6 @@ class Cart_Pole_Joint_Controller:
         
         
         positive_part = torch.relu(V_dot + self.relaxation_penalty * V)
-        
-        #making alpha_v adaptive / trainable
-        # relaxation_values = self.relaxation_penalty(x)
-        # positive_part = torch.relu(V_dot + relaxation_values * V)
         
         
         

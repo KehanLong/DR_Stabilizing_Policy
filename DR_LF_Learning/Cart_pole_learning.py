@@ -7,7 +7,7 @@
 
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,14 +23,14 @@ from itertools import product
 def train_clf_nn_controller():
     # Network parameters
     n_input = 5
-    n_hidden = 32
+    n_hidden = 128
     n_output = 4
     num_of_layers = 4
-    n_control_hidden = 32
+    n_control_hidden = 64
     n_control = 1
-    n_control_layer = 4
+    n_control_layer = 3
     num_epochs = 30
-    loss_threshold = 1e-4
+    loss_threshold = 1e-3
     batch_size = 256  # Updated batch size
     
 
@@ -43,10 +43,6 @@ def train_clf_nn_controller():
     net_policy = PolicyNet(n_input, n_control_hidden, n_control, n_control_layer).to(device)
     
     
-    # LOAD 
-    # baseline_clf_saved_model = "saved_models/joint_clf_controller_models/cart_pole/baseline_joint_clf_1.pt"
-    # baseline_policy_model = "saved_models/joint_clf_controller_models/cart_pole/baseline_controller_1.pt"
-    
     net_nominal = LyapunovNet(n_input, n_hidden, n_output, num_of_layers).to(device)
     
     #net_nominal.load_state_dict(torch.load(baseline_clf_saved_model))
@@ -56,7 +52,7 @@ def train_clf_nn_controller():
     #net_policy.load_state_dict(torch.load(baseline_policy_model))
     # Set relaxation penalty
     
-    relaxation_penalty = 0.4  # Fixed value
+    relaxation_penalty = 0.2  
     clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, relaxation_penalty)
 
     # Optimizer
@@ -64,18 +60,16 @@ def train_clf_nn_controller():
 
     # Data generation
     num_theta = 60
-    theta = torch.Tensor(num_theta).uniform_(-np.pi/2, np.pi/2)
-    #theta = torch.Tensor(num_theta).uniform_(-np.pi, np.pi)
-    #theta = torch.Tensor(num_theta).uniform_(-2, 2)
+    theta = torch.Tensor(num_theta).uniform_(-np.pi, np.pi)
     # For angular velocities
-    num_angular = 40
-    theta_dot = torch.Tensor(num_angular).uniform_(-2.0, 2.0)  # adjust this range if needed
+    num_angular = 60
+    theta_dot = torch.Tensor(num_angular).uniform_(-4.0, 4.0)  # adjust this range if needed
     # For cart positions
-    num_pos = 20
+    num_pos = 40
     pos = torch.Tensor(num_pos).uniform_(-3, 3)
     # For cart linear velocities
-    num_linear = 20
-    pos_dot = torch.Tensor(num_linear).uniform_(-2.0, 2.0)  # adjust this range if needed
+    num_linear = 40
+    pos_dot = torch.Tensor(num_linear).uniform_(-4.0, 4.0)  # adjust this range if needed
     
     combinations = list(product(pos, theta, pos_dot, theta_dot))
     
@@ -110,7 +104,7 @@ def train_clf_nn_controller():
     train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     
     # TensorBoard writer
-    writer = SummaryWriter()
+    #writer = SummaryWriter()
 
     # Training loop
     for epoch in range(num_epochs):
@@ -131,23 +125,23 @@ def train_clf_nn_controller():
                 print(f'Epoch [{epoch + 1}/{num_epochs}], Mini-Batch [{i + 1}/{len(train_loader)}], Loss: {loss.item():.6f}')
                 
                 # Write to TensorBoard
-                writer.add_scalar('Loss/train', loss.item(), epoch * len(train_loader) + i)
+                #writer.add_scalar('Loss/train', loss.item(), epoch * len(train_loader) + i)
     
         average_loss = total_loss / len(train_loader)
         print(f'Epoch [{epoch + 1}/{num_epochs}], Average Loss: {average_loss:.6f}')
-        writer.add_scalar('Loss/average', average_loss, epoch)
+        #writer.add_scalar('Loss/average', average_loss, epoch)
     
         if average_loss < loss_threshold:
             print(f'Training stopped at epoch {epoch + 1}, Average Loss: {average_loss:.4f}')
             break
         
     # Close the TensorBoard writer
-    writer.close()
+    w#riter.close()
 
 
     # Save the trained models
-    torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_joint_clf_1.pt")
-    torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_controller_1.pt")
+    torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_clf.pt")
+    torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_controller.pt")
 
     #torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/dro_joint_clf.pt")
     #torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/dro_controller.pt")

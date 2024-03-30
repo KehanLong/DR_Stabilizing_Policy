@@ -151,9 +151,9 @@ if __name__ == "__main__":
     
     # policy_saved_model = "saved_models/joint_clf_controller_models/cart_pole/good_controller.pt"
     
-    clf_saved_model = "saved_models/joint_clf_controller_models/cart_pole/baseline_joint_clf_1.pt"
+    clf_saved_model = "saved_models/joint_clf_controller_models/cart_pole/baseline_clf.pt"
     
-    policy_saved_model = "saved_models/joint_clf_controller_models/cart_pole/baseline_controller_1.pt"
+    policy_saved_model = "saved_models/joint_clf_controller_models/cart_pole/baseline_controller.pt"
     
     
     
