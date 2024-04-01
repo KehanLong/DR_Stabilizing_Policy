@@ -33,20 +33,27 @@ Pre-trained models are available in the saved_models/joint_clf_controller_models
 To reproduce the results, refer to the files ```Inverted_pendulum_evaluate```; ```Mountain_car_evaluate```. 
 
 
-# Results
+**# Results**
 
-The results of the learned DR Lyapunov-stable policy are demonstrated through the following videos:
+The results of the learned DR Lyapunov-stable policy are demonstrated through the following GIFs:
 
-## Inverted Pendulum 
+**## Inverted Pendulum**
 
-### Initial state 1
+**### Initial state 1**
 
+| Baseline | Distributionally Robust |
+|:--------:|:-----------------------:|
+| ![Baseline Initial State 1](Results/inverted_pendulum_baseline_case1.gif) | ![Distributionally Robust Initial State 1](Results/inverted_pendulum_DR_case1.gif) |
 
+**### Initial state 2**
 
-### Initial state 2
+| Baseline | Distributionally Robust |
+|:--------:|:-----------------------:|
+| ![Baseline Initial State 2](Results/inverted_pendulum_baseline_case2.gif) | ![Distributionally Robust Initial State 2](Results/inverted_pendulum_DR_case2.gif) |
 
+**## Mountain Car**
 
-
-
-## Mountain Car
+| Baseline | Distributionally Robust |
+|:--------:|:-----------------------:|
+| ![Baseline Mountain Car](Results/mountain_car_baseline.gif) | ![Distributionally Robust Mountain Car](Results/mountain_car_DR.gif) |
 
