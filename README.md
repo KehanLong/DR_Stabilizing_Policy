@@ -13,12 +13,6 @@ Install the required dependcies by using a anaconda virtual environment:
 conda env create -f environment.yml
 ```
 
-## Acknowledgments
-
-This project uses a modified version of the Gymnasium library, which is an open-source library for developing and comparing reinforcement learning algorithms. We would like to acknowledge the original work by the Farama Foundation and the contributors of the Gymnasium repository. The original repository can be found at https://github.com/Farama-Foundation/Gymnasium.
-
-The Gymnasium_modified directory in this project contains a few minor modifications to the system dynamics of the Mountain Car and Inverted Pendulum environments. 
-
 Activate the environment:
 ```
 conda activate DR_Stabilizing_Policy
@@ -28,6 +22,13 @@ and go to the project directory
 ```
 cd DR_LF_Learning
 ```
+
+## Acknowledgments
+
+This project uses a modified version of the Gymnasium library, which is an open-source library for developing and comparing reinforcement learning algorithms. We would like to acknowledge the original work by the Farama Foundation and the contributors of the Gymnasium repository. The original repository can be found at https://github.com/Farama-Foundation/Gymnasium.
+
+The Gymnasium_modified directory in this project contains a few minor modifications to the system dynamics of the Mountain Car and Inverted Pendulum environments. 
+
 
 # Training
 
