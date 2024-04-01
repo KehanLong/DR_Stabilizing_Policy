@@ -99,7 +99,7 @@ class PendulumEnv(gym.Env):
         "render_fps": 30,
     }
 
-    def __init__(self, render_mode: Optional[str] = None, g=9.81, m =1.0, l = 1.0, b =0.13, controller = 'Baseline'):
+    def __init__(self, render_mode: Optional[str] = None, g=9.81, m =1.0, l = 1.0, b =0.13, controller = 'Baseline', initial_state = np.array([np.pi, 0])):
         self.max_speed = 6
         self.max_torque = 15.0
         self.dt = 0.02
@@ -117,6 +117,8 @@ class PendulumEnv(gym.Env):
         self.isopen = True
         
         self.controller_type = controller
+
+        self.initial_state = initial_state
 
         high = np.array([1.0, 1.0, self.max_speed], dtype=np.float32)
         # This will throw a warning in tests/envs/test_envs in utils/env_checker.py as the space is not symmetric
@@ -207,7 +209,7 @@ class PendulumEnv(gym.Env):
         #self.state = self.np_random.uniform(low=low, high=high)
         # force the state to be down
         #self.state = np.array([-np.pi/2, 5.5], dtype=np.float32)
-        self.state = np.array([np.pi, 0.0], dtype = np.float32)
+        self.state = self.initial_state
         self.last_u = None
 
         if self.render_mode == "human":
@@ -319,10 +321,13 @@ class PendulumEnv(gym.Env):
             self.screen.blit(text_surface, (10, 10))  # Position the text on the top-left corner
             
             # Render text for Controller Type
-            #controller_text = f'{self.controller_type} Controller'
+            controller_text = f'{self.controller_type} Controller'
             # controller_text = 'CLF-CBF QP Policy'
-            #controller_surface = font.render(controller_text, True, (0, 0, 0))
-            # self.screen.blit(controller_surface, (10, 50))  # Position below the previous text
+            controller_surface = font.render(controller_text, True, (0, 0, 0))
+            self.screen.blit(controller_surface, (10, 50))  # Position below the previous text
+
+            Initial_state_surface = font.render(f'Initial State: ({self.initial_state[0]:.3f}, {self.initial_state[1]:.3f})', True, (0, 0, 0))
+            self.screen.blit(Initial_state_surface, (10, 90))  # Position below the previous text
 
             
             

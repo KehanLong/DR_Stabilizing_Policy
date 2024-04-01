@@ -80,7 +80,7 @@ def train_clf_nn_controller():
     position = torch.Tensor(num_position).uniform_(-2.0, 2.0)
     # For angular velocities
     num_velocity = 40
-    velocity = torch.Tensor(num_velocity).uniform_(-0.1, 0.1)  
+    velocity = torch.Tensor(num_velocity).uniform_(-1.0, 1.0)  
 
     
     

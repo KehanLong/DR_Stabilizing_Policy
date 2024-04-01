@@ -112,9 +112,9 @@ class Continuous_MountainCarEnv(gym.Env):
     def __init__(self, render_mode: Optional[str] = None, power = 0.0015, goal_velocity=0, controller = 'Baseline', initial_state = np.array([-math.pi/6, 0])):
         self.min_action = -2.0
         self.max_action = 2.0
-        self.min_position = -5
-        self.max_position = 5
-        self.max_speed = 0.5
+        self.min_position = -1.2
+        self.max_position = 0.6
+        self.max_speed = 0.3
         self.goal_position = (
             math.pi/6 # was 0.5 in gymnasium, 0.45 in Arnaud de Broissia's version
         )
@@ -153,7 +153,7 @@ class Continuous_MountainCarEnv(gym.Env):
         velocity = self.state[1]
         force = min(max(action[0], self.min_action), self.max_action)
         
-        dt = 0.05
+        dt = 0.1
 
         velocity += (force * self.power - 0.0025 * math.cos(3 * position)) * dt
         # if velocity > self.max_speed:
@@ -311,6 +311,9 @@ class Continuous_MountainCarEnv(gym.Env):
             
             controller_surface = font.render(controller_text, True, (0, 0, 0))
             self.screen.blit(controller_surface, (10, 50))  # Position below the previous text
+
+            Initial_state_surface = font.render(f'Initial State: ({self.initial_state[0]:.3f}, {self.initial_state[1]:.3f})', True, (0, 0, 0))
+            self.screen.blit(Initial_state_surface, (10, 90))  # Position below the previous text
 
             
             

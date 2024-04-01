@@ -230,7 +230,7 @@ if __name__ == "__main__":
     
     
     # Create the Pendulum environment
-    env = PendulumEnv(render_mode="human" , g=9.81, m=1.1, l=1.0, b=0.18, controller = 'Baseline')
+    env = PendulumEnv(render_mode="human" , g=9.81, m=1.1, l=1.0, b=0.18, controller = 'Baseline', initial_state=np.array([-np.pi/2, 3.5]))
 
     # Simulate with the baseline controller
     actions1, V_values1 = simulate_pendulum(env, baseline_clf_controller)
@@ -247,27 +247,12 @@ if __name__ == "__main__":
     dro_clf_controller = InvertedPendulum_Joint_Controller(net_dro, net_policy_dro)    
     
     
-    env = PendulumEnv(render_mode="human" , g=9.81, m=1.1, l=1.0, b=0.18, controller = 'DR')
+    env = PendulumEnv(render_mode="human" , g=9.81, m=1.1, l=1.0, b=0.18, controller = 'DR', initial_state=np.array([-np.pi/2, 3.5]))
     actions2, V_values2 = simulate_pendulum(env, dro_clf_controller)
 
     # Plot and compare actions
-    plot_actions(actions1, actions2, "Control Actions Over Time", "controller_comparison.png")
-    
-    plot_actions(V_values1, V_values2, "Lyapunov Function Values Over Time", "controller_compare_V_value.png", "Lyapunov value")
-    
-    # Load the observations from the DR trajectory
-    # trajectory_data = np.load('dr_trajectory.npy', allow_pickle=True).item()
-    # observations = trajectory_data['observations']
 
-    # Load RL models
-    # model_sac = SAC.load("sac_pendulum")
-    # model_ppo = PPO.load("ppo_pendulum")
-
-
-    # sac_values, ppo_values = read_rl_values('rl_values.csv')
+    #plot_actions(actions1, actions2, "Control Actions Over Time", "controller_comparison.png")
     
+    #plot_actions(V_values1, V_values2, "Lyapunov Function Values Over Time", "controller_compare_V_value.png", "Lyapunov value")
     
-    # plot_multiple_actions([sac_values, ppo_values],
-    #                   ['SAC Controller', 'PPO Controller'],
-    #                   'Value Function Values Over Time',
-    #                   'RL_Value_function_plot.png')
