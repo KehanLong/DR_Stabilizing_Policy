@@ -41,9 +41,6 @@ The results of the learned DR Lyapunov-stable policy are demonstrated through th
 
 ### Initial state 1
 
-<video src="Results/inverted_pendulum_baseline_case1.mp4" width="100%"/>
-
-
 
 
 ### Initial state 2
