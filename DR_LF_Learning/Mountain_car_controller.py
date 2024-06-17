@@ -49,9 +49,6 @@ class MountainCar_Joint_Controller:
             torch.zeros_like(sin_position),
             power * torch.ones_like(position)], dim=1).to(x.device)
         
-        
-        
-        
         return f_x, g_x
 
 

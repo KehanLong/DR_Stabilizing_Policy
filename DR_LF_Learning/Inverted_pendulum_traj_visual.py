@@ -19,7 +19,7 @@ from Inverted_pendulum_controller import InvertedPendulum_Joint_Controller
 
 
 
-def simulate_joint_trajectory(controller, initial_state, time_steps=4000, dt=0.02):
+def simulate_joint_trajectory(controller, initial_state, time_steps=2000, dt=0.02):
     trajectory = [initial_state.detach().numpy().reshape(1,-1)]  # This ensures it starts as a 2D array
     state = initial_state.clone().detach().float()  # Starting from a detached copy
     state.requires_grad = True
@@ -64,7 +64,7 @@ def simulate_joint_trajectory(controller, initial_state, time_steps=4000, dt=0.0
 
 
 # Function to plot the trajectories
-def plot_trajectories(trajectories, x_data, y_data, title, xlabel, ylabel):
+def plot_trajectories(trajectories, x_data, y_data, title, xlabel, ylabel, xlim=None):
     plt.figure(figsize=(10, 8))
     
     for traj_x, traj_y in zip(x_data, y_data):
@@ -82,6 +82,10 @@ def plot_trajectories(trajectories, x_data, y_data, title, xlabel, ylabel):
     plt.xticks(fontsize=22)
     plt.yticks(fontsize=22)
     #plt.title(title, fontsize=24)
+    
+    # Set the x-axis limits if provided
+    if xlim is not None:
+        plt.xlim(xlim)
     
     plt.grid(True)
 
@@ -217,13 +221,13 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
     - plot_values_over_time: Function to plot values over time.
     """
     # Sample angles and velocities
-    negative_angles = np.random.uniform(low=-np.pi, high=-np.pi/10, size=5)
-    positive_angles = np.random.uniform(low=np.pi/10, high=np.pi, size=5)
+    negative_angles = np.random.uniform(low=-np.pi, high=-np.pi/5, size=5)
+    positive_angles = np.random.uniform(low=np.pi/5, high=np.pi, size=5)
     angles = np.concatenate((negative_angles, positive_angles), axis=0)
     np.random.shuffle(angles)  # Shuffle to ensure randomness
 
-    negative_velocity = np.random.uniform(low=-6, high=-0.2, size=5)
-    positive_velocity = np.random.uniform(low=0.2, high=6, size=5)
+    negative_velocity = np.random.uniform(low=-6, high=-1.0, size=5)
+    positive_velocity = np.random.uniform(low=1.0, high=6, size=5)
     velocity = np.concatenate((negative_velocity, positive_velocity), axis=0)
     np.random.shuffle(velocity)  # Shuffle to ensure randomness
 
@@ -243,7 +247,7 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
         angular_velocities = [traj[:, 2] for traj in trajectories]
 
         # Plot trajectories and values over time
-        plot_trajectories(trajectories, angles, angular_velocities, f'{controller_type} Controller: Inverted Pendulum Trajectories', 'Angle', 'Angular Velocity')
+        plot_trajectories(trajectories, angles, angular_velocities, f'{controller_type} Controller: Inverted Pendulum Trajectories', 'Angle', 'Angular Velocity', xlim=(-6.5, 6.5))
         plot_values_over_time(V_trajectories, f'{controller_type} Controller: Inverted Pendulum Lyapunov Function', 'V Value')
 
         # Optional: Plot relaxation values if needed

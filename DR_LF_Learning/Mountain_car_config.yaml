@@ -1,0 +1,31 @@
+general:
+  device: cpu
+  conv_mode: matrix
+  enable_incomplete_verification: false
+  root_path: ${CONFIG_PATH}
+  csv_name: verification/specs/mountain_car_specs.csv
+model:
+  name: >-
+    Customized("mountain_car_models.py", "create_mountain_car_model",
+    lyapunov_parameters={"n_input": 3, "n_hidden": 16, "n_output": 4, "n_layers": 3},
+    controller_parameters={"n_input": 3, "n_hidden": 16, "n_output": 1, "n_layers": 3})
+  input_shape: [-1, 3]
+data:
+  dataset: Customized("mountain_car_models.py", "box_data", lower_limit=[-1.0, -1.0, -1.0], upper_limit=[1.0, 1.0, 1.0], ndim=3, scale=1.0, hole_size=0.0)
+attack:
+  pgd_order: skip
+solver:
+  batch_size: 50000
+  min_batch_size_ratio: 0.
+  bound_prop_method: crown
+bab:
+  override_timeout: 100000000
+  decision_thresh: -1.e-6
+  branching:
+    method: sb
+    input_split:
+      enable: True
+      ibp_enhancement: True
+      compare_with_old_bounds: True
+      adv_check: -1
+      sb_coeff_thresh: 0.001

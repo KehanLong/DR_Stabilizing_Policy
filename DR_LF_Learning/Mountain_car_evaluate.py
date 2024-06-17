@@ -38,7 +38,7 @@ def plot_actions(actions1, actions2, title, filename, y_axis_name = "Action Valu
     plt.savefig(filename, dpi=300)
     plt.show()
 
-def plot_trajectories(trajectories, x_data, y_data, title, xlabel, ylabel):
+def plot_trajectories(x_data, y_data, title, xlabel, ylabel, xlim = None):
     plt.figure(figsize=(10, 8))
     
     for traj_x, traj_y in zip(x_data, y_data):
@@ -56,6 +56,10 @@ def plot_trajectories(trajectories, x_data, y_data, title, xlabel, ylabel):
     plt.xticks(fontsize=22)
     plt.yticks(fontsize=22)
     #plt.title(title, fontsize=24)
+
+    # Set the x-axis limits if provided
+    if xlim is not None:
+        plt.xlim(xlim)
     
     plt.grid(True)
 
@@ -70,8 +74,10 @@ def plot_trajectories(trajectories, x_data, y_data, title, xlabel, ylabel):
     # Save the figure in high resolution
     plt.savefig(title + ".png", dpi=300)
 
+    return plt.gca().get_xlim()
+
 # Function to run and visualize the mountain car simulation
-def simulate_mountaincar(env, controller, steps=1000):
+def simulate_mountaincar(env, controller, steps=2000):
     observation, info = env.reset()
     
     trajectory = [observation]  # Record the initial state
@@ -122,8 +128,8 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
     #     np.array([0.3, 0.04])   
     # ]
 
-    num_samples = 1
-    positions = np.random.uniform(-0.8, -0.6, size=num_samples)
+    num_samples = 10
+    positions = np.random.uniform(-0.8, 0.4, size=num_samples)
     velocities = np.random.uniform(-0.07, 0.07, size=num_samples)
     initial_states = [np.array([pos, vel]) for pos, vel in zip(positions, velocities)]
 
@@ -136,7 +142,7 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
         V_values_list = []
 
         for init_state in initial_states:
-            env = Continuous_MountainCarEnv(render_mode="human", power=0.0012, controller=controller_type, initial_state=init_state)
+            env = Continuous_MountainCarEnv(render_mode="rgb_array", power=0.0012, controller=controller_type, initial_state=init_state)
             trajectory, actions, V_values = simulate_mountaincar(env, controller)
             trajectories.append(trajectory)
             actions_list.append(actions)
@@ -146,10 +152,13 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
         positions = [traj[:, 0] for traj in trajectories]
         velocities = [traj[:, 1] for traj in trajectories]
 
-        # Plot trajectories and values over time
-        plot_trajectories(trajectories, positions, velocities, f'{controller_type} Controller: Mountain Car Trajectories', 'Position', 'Velocity')
-        
+        if controller_type == 'Baseline':
+            xlim = plot_trajectories(positions, velocities, f'{controller_type} Controller: Mountain Car Trajectories', 'Position', 'Velocity')
+        else:
+            plot_trajectories(positions, velocities, f'{controller_type} Controller: Mountain Car Trajectories', 'Position', 'Velocity', xlim=xlim)
+
     plt.show()
+
 
 
 def main():

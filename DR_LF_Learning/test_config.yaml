@@ -1,0 +1,31 @@
+general:
+  device: cpu                                      
+  conv_mode: matrix
+  enable_incomplete_verification: false
+  root_path: ${CONFIG_PATH}
+  csv_name: verification/specs/mountain_car_specs.csv
+model:
+  name: >-
+    Customized("test.py", "create_simple_model")
+  input_shape: [-1, 1]
+data:
+  dataset: Customized("test.py", "box_data", lower_limit = [-1.0], upper_limit = [1.0], scale = 1.0)
+attack:
+  pgd_order: skip
+debug:
+  print_verbose_decisions: false
+solver:
+  batch_size: 50000
+  min_batch_size_ratio: 0.
+  bound_prop_method: crown
+bab:
+  override_timeout: 1000
+  decision_thresh: -1.e-4
+  branching:
+    method: sb
+    input_split:
+      enable: True
+      ibp_enhancement: True
+      compare_with_old_bounds: True
+      adv_check: -1
+      sb_coeff_thresh: 0.001
