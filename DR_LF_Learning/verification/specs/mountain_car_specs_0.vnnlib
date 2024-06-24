@@ -1,9 +1,15 @@
 ; Input variables (states).
 (declare-const X_0 Real)
+(declare-const X_1 Real)
+(declare-const X_2 Real)
 ; Output variables (Lyapunov condition).
 (declare-const Y_0 Real)
 ; Input constraints.
 (assert (<= X_0 1.0))
 (assert (>= X_0 -1.0))
-; Verifying Lyapunov condition (output 0) holds (negative).
-(assert (>= Y_0 0.0))
+(assert (<= X_1 1.0))
+(assert (>= X_1 -1.0))
+(assert (<= X_2 1.0))
+(assert (>= X_2 -1.0))
+; Verifying output is negative.
+(assert (<= Y_0 -2.0))

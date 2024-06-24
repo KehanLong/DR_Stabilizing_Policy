@@ -18,7 +18,13 @@ Activate the environment:
 conda activate DR_Stabilizing_Policy
 ```
 
-and go to the project directory
+To formally verify the network: please install auto_LiRPA and alpha-beta-CROWN:
+
+git clone --recursive https://github.com/Verified-Intelligence/alpha-beta-CROWN.git
+(cd alpha-beta-CROWN/auto_LiRPA && pip install -e .)
+(cd alpha-beta-CROWN/complete_verifier && pip install -r requirements.txt)
+
+Finally, go to the project directory
 ```
 cd DR_LF_Learning
 ```
@@ -39,8 +45,13 @@ Pre-trained models are available in the saved_models/joint_clf_controller_models
 
 To reproduce the results, refer to the files ```Inverted_pendulum_evaluate```; ```Mountain_car_evaluate```. 
 
+# Verification 
 
-# Results
+
+cd complete_verifier
+python alpha-beta-CROWN/complete_verifier/abcrown.py --config DR_LF_Learning/test_config.yaml
+
+# Visualization Results
 
 The results of the learned DR Lyapunov-stable policy are demonstrated through the following GIFs:
 
