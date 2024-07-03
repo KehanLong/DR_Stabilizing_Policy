@@ -46,9 +46,9 @@ def train_clf_nn_controller():
     
     n_control = 1
 
-    num_epochs = 3000
+    num_epochs = 600
 
-    learning_rate = 0.003
+    learning_rate = 0.002
     loss_threshold = 1e-4
     batch_size = 128
     
@@ -76,6 +76,8 @@ def train_clf_nn_controller():
     
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    device = torch.device("cpu")
 
     
     # Generate training samples
@@ -119,7 +121,8 @@ def train_clf_nn_controller():
     
     
     
-    for model_type in ['nominal', 'dro']:
+    for model_type in ['dro']:
+    #for model_type in ['nominal', 'dro']:
         print(f"\nTraining {model_type} model")
 
         # Reset model and optimizer for each training type
@@ -131,8 +134,8 @@ def train_clf_nn_controller():
         
         if model_type == 'dro':
             # Load saved model weights for DRO training
-            nominal_net_weights = "saved_models/joint_clf_controller_models/inverted_pendulum/baseline_clf.pt"
-            nominal_policy_weights = "saved_models/joint_clf_controller_models/inverted_pendulum/baseline_controller.pt"
+            nominal_net_weights = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf.pt"
+            nominal_policy_weights = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller.pt"
 
             net_nominal.load_state_dict(torch.load(nominal_net_weights))
             net_policy.load_state_dict(torch.load(nominal_policy_weights))
@@ -142,9 +145,7 @@ def train_clf_nn_controller():
         optimizer = torch.optim.Adam(list(net_nominal.parameters()) + list(net_policy.parameters()), lr=learning_rate, betas=(0.9, 0.999))
         
         # freeze the policy network, only train the LF certificate
-        #optimizer = torch.optim.Adam(list(net_nominal.parameters()), lr=learning_rate, betas=(0.9, 0.999))
-        
-        
+        #optimizer = torch.optim.Adam(list(net_nominal.parameters()), lr=learning_rate, betas=(0.9, 0.999))  
 
         for epoch in range(num_epochs):
             optimizer.zero_grad()
@@ -156,9 +157,11 @@ def train_clf_nn_controller():
             else:  # 'dro'
                 # Compute the loss for all samples (DRO training)
                 
-                
-                
-                delta_opt = clf_controller.dro_lyapunov_derivative_loss_(x_train, xi_samples)
+                # point-wise
+                # delta_opt = clf_controller.dro_lyapunov_derivative_loss_(x_train, xi_samples)
+
+                # uniform
+                delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
 
             total_loss = delta_opt
             total_loss.backward()
@@ -178,8 +181,8 @@ def train_clf_nn_controller():
             torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/baseline_clf.pt")
             torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/baseline_controller.pt")
         else:  # 'dro'
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller.pt")
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test1.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test1.pt")
             
             
             

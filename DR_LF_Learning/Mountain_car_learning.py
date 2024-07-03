@@ -44,9 +44,9 @@ def train_clf_nn_controller():
     
     n_control = 1
 
-    num_epochs = 3000
+    num_epochs = 8000
 
-    learning_rate = 0.003
+    learning_rate = 0.005
     loss_threshold = 1e-3
     
     
@@ -66,6 +66,8 @@ def train_clf_nn_controller():
     print('average power:', power)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    device = torch.device("cpu")
 
     net_nominal = LyapunovNet(n_input, n_hidden, n_output, num_of_layers)
     net_nominal.to(device)
@@ -168,8 +170,8 @@ def train_clf_nn_controller():
             torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt")
             torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt")
         else:  # 'dro'
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test1.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test1.pt")
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test2.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test2.pt")
             
             
             

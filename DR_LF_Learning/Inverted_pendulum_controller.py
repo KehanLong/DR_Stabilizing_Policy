@@ -288,10 +288,7 @@ class InvertedPendulum_Joint_Controller:
         W = self.compute_w_matrices(x)
         V, V_grad = self.compute_clf(x)
         u = self.compute_policy(x)
-        
-        
 
-        
         # Compute V_dot for all xi samples
         V_dot_samples = []
         for xi in xi_samples:
@@ -301,7 +298,6 @@ class InvertedPendulum_Joint_Controller:
             V_dot = LfV + LgV * u 
             V_dot_samples.append(V_dot)
             
-            
         #print('V_dot_samples:', V_dot_samples)    
             
         
@@ -309,22 +305,7 @@ class InvertedPendulum_Joint_Controller:
         for V_dot in V_dot_samples[1:]:
             V_dot_max = torch.max(V_dot_max, V_dot)
             
-        #print('V_dot_max:', V_dot_max)
-        
-        # f_x, g_x = self.inverted_pendulum_dynamics(x, self.m, self.l, self.b)
-        
-        # #f_x, g_x = self.inverted_pendulum_dynamics(x, self.m, self.l, self.b)
-
-        # # Compute the Lie derivative of the Lyapunov function for all samples
-        # LfV, LgV = self.compute_lie_derivatives(x, f_x, g_x)
-
-        # V_dot = LfV + LgV * u 
-        
-        # V_dot_max = V_dot
-        
-            
-            
-        
+      
         # Compute V_grad * w for the batch
         V_grad_w = torch.bmm(V_grad.view(-1, 1, 3), W)
         
@@ -335,8 +316,48 @@ class InvertedPendulum_Joint_Controller:
         
         # Compute the positive part for loss
         positive_part = torch.relu(r * V_grad_w_inf_norm / beta + V_dot_max + self.relaxation_penalty * V) 
-
-        
         
         # Return the mean of positive part
-        return torch.mean(positive_part)    
+        return torch.mean(positive_part)  
+
+    
+      
+    def dro_lyapunov_derivative_loss_uniform(self, x, xi_samples, r=0.003, beta=0.1, gamma=0.02):
+        """
+        Computes the DR Lyapunov derivative loss with uniform formulation.
+        Args:
+        - x: State tensor samples.
+        - xi_samples: Perturbation tensor samples xi.
+        - r: Wasserstein Radius.
+        - beta: Risk parameter.
+        Returns:
+        - DR Lyapunov derivative loss with uniform formulation.
+        """
+        # Compute w perturbation for the batch
+        W = self.compute_w_matrices(x)
+        V, V_grad = self.compute_clf(x)
+        u = self.compute_policy(x)
+
+        # Compute V_grad * w for the batch
+        V_grad_w = torch.bmm(V_grad.view(-1, 1, 3), W)
+
+        # Compute the maximum 2-norm among all x samples
+        V_grad_w_norm_max = torch.max(torch.norm(V_grad_w, dim=2, p=2))
+
+        # Compute V_dot for all x samples and xi samples
+        V_dot_samples = []
+        for xi in xi_samples:
+            f_x, g_x = self.inverted_pendulum_dynamics(x, m=(self.m+xi[0]), l=self.l, b=(self.b+xi[1]))
+            LfV, LgV = self.compute_lie_derivatives(x, f_x, g_x)
+            V_dot = LfV + LgV * u
+            V_dot_samples.append(V_dot)
+
+        # Compute the LogSumExp approximation of the maximum V_dot among all x samples and xi samples
+        V_dot_stack = torch.stack(V_dot_samples)
+        V_dot_max = torch.logsumexp(V_dot_stack, dim=0)
+
+
+        # Compute the loss
+        positive_part = torch.relu(r * V_grad_w_norm_max / beta + V_dot_max + self.relaxation_penalty * V) 
+
+        return torch.mean(positive_part)

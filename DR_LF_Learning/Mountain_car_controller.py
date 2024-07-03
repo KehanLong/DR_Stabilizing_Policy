@@ -33,12 +33,6 @@ class MountainCar_Joint_Controller:
         
         position = torch.atan2(sin_position, cos_position)
         
-        
-
-        
-        
-        
-        
         # Dynamics: writing as trig functions
         f_x = torch.stack([
             velocity * cos_position,
@@ -259,7 +253,10 @@ class MountainCar_Joint_Controller:
         V_grad_w = torch.bmm(V_grad.view(-1, 1, 3), W)
         
         # Compute the maximum infinity norm among all x samples
-        V_grad_w_inf_norm_max = torch.max(torch.norm(V_grad_w, dim=2, p=float('inf')))
+        # V_grad_w_inf_norm_max = torch.max(torch.linalg.vector_norm(V_grad_w, ord=float('inf')))
+
+        # 2-norm
+        V_grad_w_inf_norm_max = torch.max(torch.linalg.vector_norm(V_grad_w, ord=float('inf')))
 
         # print('V_grad_w_max:', V_grad_w_inf_norm_max)
 
@@ -272,9 +269,13 @@ class MountainCar_Joint_Controller:
             V_dot = LfV + LgV * u 
             V_dot_samples.append(V_dot)
             
-        V_dot_max = V_dot_samples[0]
-        for V_dot in V_dot_samples[1:]:
-            V_dot_max = torch.max(V_dot_max, V_dot)  
+        # V_dot_max = V_dot_samples[0]
+        # for V_dot in V_dot_samples[1:]:
+        #     V_dot_max = torch.max(V_dot_max, V_dot)  
+
+        # Compute the LogSumExp approximation of the maximum V_dot among all x samples and xi samples, this is for better gradient and convergence
+        V_dot_stack = torch.stack(V_dot_samples)
+        V_dot_max= torch.logsumexp(V_dot_stack, dim=0)
 
         # V_grad_w_inf_norm_max_broadcast = V_grad_w_inf_norm_max.repeat(V_dot_max.shape[0], 1)
 

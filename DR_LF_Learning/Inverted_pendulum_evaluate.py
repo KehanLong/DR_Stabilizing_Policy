@@ -204,8 +204,8 @@ if __name__ == "__main__":
     
     
     
-    dro_clf_saved_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf.pt"
-    dro_policy_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller.pt"
+    dro_clf_saved_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test1.pt"
+    dro_policy_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test1.pt"
     
     
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

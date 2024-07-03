@@ -165,8 +165,8 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
 def main():
     baseline_clf_saved_model = "saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt"
     baseline_policy_model = "saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt"
-    dro_clf_saved_model = "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test1.pt"
-    dro_policy_model = "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test1.pt"
+    dro_clf_saved_model = "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test2.pt"
+    dro_policy_model = "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test2.pt"
     
     n_input = 3
     n_hidden = 16
