@@ -114,7 +114,8 @@ def train_clf_nn_controller():
     
 
 
-    for model_type in ['nominal', 'dro']:
+    #for model_type in ['nominal', 'dro']:
+    for model_type in ['dro']:
         print(f"\nTraining {model_type} model")
 
         # Reset model and optimizer for each training type
@@ -147,7 +148,7 @@ def train_clf_nn_controller():
                 delta_opt = clf_controller.lyapunov_derivative_loss(x_train, xi_samples)
             else:  # 'dro'
                 # Compute the loss for all samples (DRO training)
-                delta_opt = clf_controller.dro_lyapunov_derivative_loss_(x_train, xi_samples)
+                delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
 
             total_loss = delta_opt
             total_loss.backward()
@@ -167,8 +168,8 @@ def train_clf_nn_controller():
             torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt")
             torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt")
         else:  # 'dro'
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller.pt")
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test1.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test1.pt")
             
             
             
@@ -287,7 +288,7 @@ def evaluate_clf_controller(clf_controller, file_prefix='Mountain'):
 
 if __name__ == "__main__":
     trained_controllers = train_clf_nn_controller()
-    nominal_controller = trained_controllers['nominal']
+    # nominal_controller = trained_controllers['nominal']
     dro_controller = trained_controllers['dro']
     #evaluate_clf_controller(nominal_controller)
     #evaluate_clf_controller(dro_controller)
