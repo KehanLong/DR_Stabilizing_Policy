@@ -16,22 +16,40 @@ from lyapunov_net import LyapunovNet
 from PolicyNet import PolicyNet
 
 
-from Cart_Pole_joint_controller import Cart_Pole_Joint_Controller
+from Cart_pole_controller import Cart_Pole_Joint_Controller
 
 
 from itertools import product
 
-def save_checkpoint(epoch, model, optimizer, filename="checkpoint.pth.tar"):
-    """Save a checkpoint"""
-    state = {
-        'epoch': epoch + 1,
-        'state_dict': model.state_dict(),
-        'optimizer': optimizer.state_dict(),
-    }
-    torch.save(state, filename)
+# def save_checkpoint(epoch, model, optimizer, filename="checkpoint.pth.tar"):
+#     """Save a checkpoint"""
+#     state = {
+#         'epoch': epoch + 1,
+#         'state_dict': model.state_dict(),
+#         'optimizer': optimizer.state_dict(),
+#     }
+#     torch.save(state, filename)
 
 
-if __name__ == "__main__":
+
+def generate_uncertainty_samples(num_samples=4, alpha=2.0, beta=5.0, low=-0.05, high=0.2):
+    """
+    Generate samples of xi based on the beta distribution for length uncertainties.
+    Args:
+    - num_samples: Number of samples to generate.
+    - alpha: Alpha parameter of the beta distribution.
+    - beta: Beta parameter of the beta distribution.
+    - low: Lower bound of the desired range.
+    - high: Upper bound of the desired range.
+    Returns:
+    - A tensor of shape (num_samples, 1) containing samples of xi.
+    """
+    beta_dist = torch.distributions.Beta(alpha, beta)
+    xi_samples = beta_dist.sample((num_samples,))
+    xi_samples = xi_samples * (high - low) + low
+    return xi_samples
+
+def train_clf_nn_controller():
     n_input = 5
     n_hidden = 128
     n_output = 4
@@ -49,21 +67,27 @@ if __name__ == "__main__":
     learning_rate = 0.001
     
     
+
+    xi_samples_num = 10
     
+    xi_samples = generate_uncertainty_samples(xi_samples_num)
+    
+    print('xi_samples:', xi_samples)
+    
+    nominal_length = 1.0
+    
+    # Compute the average perturbations for mass and damping
+    average_perturbation = torch.mean(xi_samples)
+
+    length = nominal_length + average_perturbation
+    
+    print('average length:', length)
+
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    
 
-    # Instantiate the network and the CLF_NN_Controller
-    net_nominal = LyapunovNet(n_input, n_hidden, n_output, num_of_layers)
-    net_nominal.to(device)
-    net_policy = PolicyNet(n_input, n_control_hidden, n_control, 3)
-    net_policy.to(device)
-    
-    
-    # fix \alpha_V to be a constant
-    relaxation_penalty = 1.0
-    
-    clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, relaxation_penalty)
 
 
     # Generate training samples
@@ -107,65 +131,79 @@ if __name__ == "__main__":
     
     x_train.data = x_train_temp.data
     x_train = x_train.to(device)
+
+    xi_samples = xi_samples.to(device)
+    
+    # Dictionary to store the trained controllers
+    trained_controllers = {}
+
+
+    for model_type in ['nominal', 'dro']:
+    #for model_type in ['dro']:
+        print(f"\nTraining {model_type} model")
+
+        # Reset model and optimizer for each training type
+        net_nominal = LyapunovNet(n_input, n_hidden, n_output, num_of_layers).to(device)
+        net_policy = PolicyNet(n_input, n_control_hidden, n_control, 3).to(device)
+        
+        
+        
+        # warm initialization for dro
+        if model_type == 'dro':
+            # Load the trained weights from the nominal model
+            net_nominal.load_state_dict(torch.load("saved_models/joint_clf_controller_models/cart_pole/baseline_clf.pt"))
+            net_policy.load_state_dict(torch.load("saved_models/joint_clf_controller_models/cart_pole/baseline_controller.pt"))
+
+        # Instantiate the controller with specific control bounds
+        if model_type == 'nominal':
+            clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, length = 1.0, relaxation_penalty=1.0, control_bound=15.0)
+        else:  # 'dro'
+            clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, length = 1.0, relaxation_penalty=1.0, control_bound=15.0)
    
-    #save checkpoints in training
-    # checkpoint_dir = "saved_models/joint_clf_controller_models/cart_pole_checkpoints"
-    # if not os.path.exists(checkpoint_dir):
-    #     os.makedirs(checkpoint_dir)
 
-    for epoch in range(num_epochs):
-        optimizer.zero_grad()
-        total_loss = 0.0  # Initialize the total loss for this epoch
-        
-        
-        #vectorize implementation
+        optimizer = torch.optim.Adam(list(net_nominal.parameters()) + list(net_policy.parameters()), lr=learning_rate, betas=(0.9, 0.999))
 
-        # compute the loss for all samples
-        delta_opt = clf_controller.lyapunov_derivative_loss(x_train)
+        for epoch in range(num_epochs):
+            optimizer.zero_grad()
+            total_loss = 0.0
 
-        # Compute the average loss
-        total_loss = delta_opt
+            if model_type == 'nominal':
+                # Compute the loss for all samples (baseline training)
+                delta_opt = clf_controller.lyapunov_derivative_loss(x_train, xi_samples)
+            else:  # 'dro'
+                # Compute the loss for all samples (DRO training)
+                delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
 
-        # Backpropagate the loss and update the weights and control inputs
-        total_loss.backward()
-        optimizer.step()
-        
-    
-        if (epoch + 1) % 20 == 0:
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss.item():.6f}')
+            total_loss = delta_opt
+            total_loss.backward()
+            optimizer.step()
+
+            if (epoch + 1) % 50 == 0:
+                print(f'Epoch [{epoch + 1}/{num_epochs}], {model_type} Loss: {total_loss.item():.6f}')
+
+            if total_loss.item() < loss_threshold:
+                print(f'Training stopped at epoch {epoch + 1}, {model_type} Loss: {total_loss.item():.4f}')
+                break
             
-        # Save a checkpoint every 50 epochs
-        # if (epoch + 1) % 50 == 0:
-        #     checkpoint_filename = os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch+1}.pth.tar")
-        #     save_checkpoint(epoch, net_nominal, optimizer, checkpoint_filename)
-        #     print(f"Saved checkpoint at epoch {epoch+1}")
-    
-        if total_loss.item() < loss_threshold:
-            print(f'Training stopped at epoch {epoch + 1}, Loss: {total_loss.item():.4f}')
-            break
-        
-        
+        trained_controllers[model_type] = clf_controller
 
-    '''
-    save and load network parameters
-    '''
-    torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_clf.pt")
-    torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_controller.pt")
-    
-    #torch.save(relaxation_penalty.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/method2_alpha_v.pt")
-
-    # net_fewer_training = LyapunovNet(n_input, n_hidden, n_output)
-
-    # net_fewer_training.load_state_dict(torch.load("saved_models/clf_models/cart_pole_2000sample.pt"))
-    # clf_controller = Cart_Pole_CLF_NN_Controller(net_fewer_training, relaxation_penalty=1.0)
-    
-
-        
+        # Saving model parameters
+        if model_type == 'nominal':
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_clf.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/baseline_controller.pt")
+        else:  # 'dro'
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/dro_clf.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/cart_pole/dro_controller.pt")
+            
+            
+            
+    return trained_controllers
+           
 # #############################
 # ### For Visualization of the learned CLF
 # ###############################
 
-
+def evaluate_clf_controller(clf_controller, file_prefix='Cart_pole'):
     # Generate a grid of points in the (theta, position) plane
     
     # fix two dimension of state: theta, Omega, position, pos_dot
@@ -289,3 +327,10 @@ if __name__ == "__main__":
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     #plt.savefig("Cart_Pole_Controller.png", dpi=300)
     plt.show()
+
+if __name__ == "__main__":
+    trained_controllers = train_clf_nn_controller()
+    # nominal_controller = trained_controllers['nominal']
+    dro_controller = trained_controllers['dro']
+    #evaluate_clf_controller(nominal_controller)
+    #evaluate_clf_controller(dro_controller)

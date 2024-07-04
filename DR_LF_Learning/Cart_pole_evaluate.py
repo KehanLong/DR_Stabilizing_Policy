@@ -13,9 +13,13 @@ import torch
 
 from PolicyNet import PolicyNet
 from lyapunov_net import LyapunovNet
-#from Cart_Pole_clf_controller import Cart_Pole_CLF_NN_Controller
 
-from Cart_Pole_joint_controller import Cart_Pole_Joint_Controller
+from Cart_pole_controller import Cart_Pole_Joint_Controller
+
+import sys
+sys.path.append('../')  
+
+from Gymnasium_modified.gymnasium.envs.classic_control.cartpole  import CartPoleEnv
 
 #import cvxpy as cp
 
@@ -31,40 +35,11 @@ def V_theta(controller, x):
     
     return V, gradV
 
-# def simulate_trajectory(controller, initial_state, time_steps=2000, dt=0.02):
-#     trajectory = [initial_state.detach().numpy().reshape(1,-1)]  # This ensures it starts as a 2D array
-#     state = initial_state.clone().detach()  # Starting from a detached copy
-#     state.requires_grad = True
-#     max_u = 10
-    
-#     V_values = []
-#     relax_values = []
 
-#     for _ in range(time_steps):
-#         V, gradV = controller.compute_clf(state)
-    
-#         # Solve the CLF QP to get the optimal control input
-#         u_opt, V_current, relax_current = clf_qp_learned(controller, state, max_u, 10.0)
-    
-        
-#         # Simple Euler integration for now
-#         f_x, g_x = controller.cart_pole_dynamics(state)
-#         state_dot = f_x + g_x * u_opt
-#         state = (state + dt * state_dot).detach()  # Getting a detached tensor after update
-#         state.requires_grad = True
-        
-#         trajectory.append(state.detach().numpy().reshape(1,-1))  # Convert to 2D numpy array immediately
-        
-#         V_values.append(V_current[0][0])
-#         relax_values.append(relax_current)
-
-#     return np.vstack(trajectory), V_values, relax_values # Convert the list of 2D numpy arrays to a single 2D numpy array
-
-def simulate_joint_trajectory(controller, policy, initial_state, time_steps=1000, dt=0.02):
+def simulate_joint_trajectory(controller, initial_state, time_steps=1000, dt=0.02):
     trajectory = [initial_state.detach().numpy().reshape(1,-1)]  # This ensures it starts as a 2D array
     state = initial_state.clone().detach().float()  # Starting from a detached copy
     state.requires_grad = True
-    max_u = 10
     
     V_values = []
     relax_values = []
@@ -72,17 +47,10 @@ def simulate_joint_trajectory(controller, policy, initial_state, time_steps=1000
     for _ in range(time_steps):
         V, gradV = controller.compute_clf(state)
         
-        f_x, g_x = controller.cart_pole_dynamics(state)
+        f_x, g_x = controller.cart_pole_dynamics(state, controller.length)
         
-        LfV, LgV = controller.compute_lie_derivatives(state, f_x, g_x)
         
-        #loss = controller.lyapunov_derivative_loss(state)
-        
-        #u_opt = policy(state)
-        
-        u_opt = controller.compute_policy(state)
-
-        
+        u_opt = controller.compute_policy(state)        
         
         state_dot = f_x + g_x * u_opt
         state = (state + dt * state_dot).detach()  # Getting a detached tensor after update
@@ -173,6 +141,58 @@ def plot_control_inputs(controller, state_space, title, xlabel, ylabel):
     plt.show()
 
 
+def simulate_cartpole(env, controller, steps=200):
+    observation, info = env.reset()
+    
+    trajectory = [observation]  # Record the initial state
+    actions = []
+    Lyapunov_values = []
+
+    for i in range(steps):
+        x = observation[0]
+        velocity = observation[1]
+        theta = observation[2]
+        theta_dot = observation[3]
+        converted_state = np.array([x, np.cos(theta), np.sin(theta), velocity, theta_dot])
+        converted_state = torch.tensor(converted_state, dtype=torch.float32)
+        converted_state.requires_grad = True
+
+        action_tensor = controller.compute_policy(converted_state)
+        action = action_tensor.detach().cpu().numpy().reshape(1)
+        actions.append(action[0])  # Record the action
+
+
+        f_x, g_x = controller.cart_pole_dynamics(converted_state, controller.length)    
+    
+
+        state_dot = f_x + g_x * action_tensor
+        
+        converted_state = (converted_state + 0.02 * state_dot).detach()  # Getting a detached tensor after update
+
+        # Update state variables sequentially
+        # x_dot = converted_state[3] + 0.02 * state_dot[0,3]
+        # theta_dot = converted_state[4] + 0.02 * state_dot[0,4]
+        # x = converted_state[0] + 0.02 * x_dot
+        # theta = torch.atan2(converted_state[2] + 0.02 * state_dot[0,2], converted_state[1] + 0.02 * state_dot[0,1])
+
+        # converted_state = torch.tensor([x, torch.cos(theta), torch.sin(theta), x_dot, theta_dot], dtype=torch.float32)
+        print('state_update:', converted_state)
+
+        
+        # V_value, _ = controller.compute_clf(converted_state)
+        # V_value = V_value.detach().cpu().numpy().reshape(1)
+        # Lyapunov_values.append(V_value[0])
+
+        observation, reward, terminated, truncated, info = env.step(action)
+
+        print('env_update:', observation)
+        trajectory.append(observation)  # Record the state
+        env.render()
+
+    env.close()
+    return np.array(trajectory), actions, Lyapunov_values
+
+
 
 if __name__ == "__main__":
     
@@ -217,8 +237,11 @@ if __name__ == "__main__":
     
     net_policy.load_state_dict(torch.load(policy_saved_model))
     
-    clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, relaxation_penalty=0.4)
+    clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, length = 1, relaxation_penalty=1.0)
+
+    env = CartPoleEnv(render_mode="human", mc = 1.0, mp = 1.0, l = 1)
     
+    simulate_cartpole(env, clf_controller)
     
     #---------------------- Evaluate the Learned CLF and CLF-QP controller------------------------------
     
@@ -231,24 +254,24 @@ if __name__ == "__main__":
     #initial_states = [torch.tensor([position, np.cos(angle), np.sin(angle), 0. , 0.]) for angle in [-np.pi/8, np.pi/6, np.pi/4] for position in [2.7, 1.2, -2.4]]
 
     # Sample 5 random angles in the negative range and 5 in the positive range avoiding values too close to zero
-    negative_angles = np.random.uniform(low=-np.pi/4, high=-np.pi/10, size=5)
-    positive_angles = np.random.uniform(low=np.pi/10, high=np.pi/4, size=5)
+    negative_angles = np.random.uniform(low=-np.pi/4, high=-np.pi/10, size=1)
+    positive_angles = np.random.uniform(low=np.pi/10, high=np.pi/4, size=1)
     angles = np.concatenate((negative_angles, positive_angles), axis=0)
     np.random.shuffle(angles)  # Shuffle to ensure randomness
     
     # Sample 5 random positions in the negative range and 5 in the positive range avoiding values too close to zero
-    negative_positions = np.random.uniform(low=-4, high=-1, size=5)
-    positive_positions = np.random.uniform(low=1, high=4, size=5)
+    negative_positions = np.random.uniform(low=-4, high=-1, size=1)
+    positive_positions = np.random.uniform(low=1, high=4, size=1)
     positions = np.concatenate((negative_positions, positive_positions), axis=0)
     np.random.shuffle(positions)  # Shuffle to ensure randomness
     
     # Create 10 random initial states
-    initial_states = [torch.tensor([positions[i], np.cos(angles[i]), np.sin(angles[i]), 0., 0.]) for i in range(10)]
+    initial_states = [torch.tensor([positions[i], np.cos(angles[i]), np.sin(angles[i]), 0., 0.]) for i in range(1)]
 
     
     #results = [simulate_trajectory(clf_controller, init_state) for init_state in initial_states]
     
-    results = [simulate_joint_trajectory(clf_controller, net_policy, init_state) for init_state in initial_states]
+    results = [simulate_joint_trajectory(clf_controller, init_state) for init_state in initial_states]
     
     
     trajectories, V_trajectories, relax_trajectories = zip(*results)
@@ -269,9 +292,9 @@ if __name__ == "__main__":
     truncated_V_trajectories = [trajectory[:number_of_time_steps] for trajectory in V_trajectories]
     plot_values_over_time(truncated_V_trajectories, 'Lyapunov function values over time', 'V Value')
     plot_values_over_time(relax_trajectories, 'Relaxation values over time', 'Relax Value')
-
     
     plt.show()
+
 
 
 

@@ -96,7 +96,7 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         self.total_mass = self.masspole + self.masscart
         self.length = l  # actually half the pole's length
         self.polemass_length = self.masspole * self.length
-        self.force_mag = 30.0
+        self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = "euler"
 
@@ -143,16 +143,16 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         denominator1 = self.masscart + self.masspole * sintheta**2
         denominator2 = self.length * (self.masscart + self.masspole * sintheta**2)
 
+
         theta_double_dot = (- self.masspole * self.length * theta_dot**2 * sintheta * costheta + (self.masscart + self.masspole) * self.gravity * sintheta) / denominator2 - costheta * force / denominator2
         x_double_dot = self.masspole * sintheta * (self.length * theta_dot**2 - self.gravity * costheta) / denominator1 + 1 * force / denominator1
 
+        state = np.array([x, costheta, sintheta, x_dot, theta_dot])
+        state_dot = np.array([x_dot, -sintheta * theta_dot, costheta * theta_dot, x_double_dot, theta_double_dot])
+        state = state + self.tau * state_dot
 
-        #x_dot = x_dot + self.tau * x_double_dot
-        x = x + self.tau * x_dot
-        x_dot = x_dot + self.tau * x_double_dot
-        #theta_dot = theta_dot + self.tau * theta_double_dot
-        theta = theta + self.tau * theta_dot
-        theta_dot = theta_dot + self.tau * theta_double_dot
+        x, costheta, sintheta, x_dot, theta_dot = state
+        theta = math.atan2(sintheta, costheta)
 
         self.state = (x, x_dot, theta, theta_dot)
 
@@ -170,19 +170,8 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             self.steps_beyond_terminated += 1
             reward = 0.0
         
+    
         
-        '''
-        continuous-time reward example
-        '''
-        # costs = angle_normalize(theta) ** 2 + 0.1 * theta_dot**2 + 0.001 * (force**2) + 0.1 * x**2 + 0.01 * x_dot**2  
-        
-        # reward = -costs
-        
-        # terminated = False
-        
-
-            
-
         if self.render_mode == "human":
             self.render()
         return np.array(self.state, dtype=np.float32), reward, terminated, False, {}
@@ -207,7 +196,7 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         #self.state = self.np_random.uniform(low=low, high=high, size=(4,))
         
         #reset the state determistically
-        self.state = np.array([0.0, 0.0, 1.0, 0.0], dtype=np.float32)
+        self.state = np.array([0.0,-3.0, 0.0, 0.0], dtype=np.float32)
         
         self.steps_beyond_terminated = None
 

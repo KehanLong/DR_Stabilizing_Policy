@@ -67,7 +67,6 @@ def train_clf_nn_controller():
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    device = torch.device("cpu")
 
     net_nominal = LyapunovNet(n_input, n_hidden, n_output, num_of_layers)
     net_nominal.to(device)
@@ -291,6 +290,6 @@ def evaluate_clf_controller(clf_controller, file_prefix='Mountain'):
 if __name__ == "__main__":
     trained_controllers = train_clf_nn_controller()
     # nominal_controller = trained_controllers['nominal']
-    dro_controller = trained_controllers['dro']
+    # dro_controller = trained_controllers['dro']
     #evaluate_clf_controller(nominal_controller)
     #evaluate_clf_controller(dro_controller)
