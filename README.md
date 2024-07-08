@@ -43,13 +43,8 @@ To re-train the provided examples, simply run
 
 Pre-trained models are available in the saved_models/joint_clf_controller_models directory.
 
-To reproduce the results, refer to the files ```Inverted_pendulum_evaluate```; ```Mountain_car_evaluate```. 
+To visualize the performance of the learned controllers, refer to the files ```Inverted_pendulum_evaluate```; ```Mountain_car_evaluate```. 
 
-# Verification 
-
-
-cd complete_verifier
-python alpha-beta-CROWN/complete_verifier/abcrown.py --config DR_LF_Learning/test_config.yaml
 
 # Visualization Results
 

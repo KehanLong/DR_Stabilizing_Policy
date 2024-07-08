@@ -21,8 +21,6 @@ sys.path.append('../')
 
 from Gymnasium_modified.gymnasium.envs.classic_control.cartpole  import CartPoleEnv
 
-#import cvxpy as cp
-
 
 
 def V_theta(controller, x):
@@ -36,7 +34,7 @@ def V_theta(controller, x):
     return V, gradV
 
 
-def simulate_joint_trajectory(controller, initial_state, time_steps=1000, dt=0.02):
+def simulate_joint_trajectory(controller, initial_state, time_steps=1200, dt=0.02):
     trajectory = [initial_state.detach().numpy().reshape(1,-1)]  # This ensures it starts as a 2D array
     state = initial_state.clone().detach().float()  # Starting from a detached copy
     state.requires_grad = True
@@ -47,10 +45,11 @@ def simulate_joint_trajectory(controller, initial_state, time_steps=1000, dt=0.0
     for _ in range(time_steps):
         V, gradV = controller.compute_clf(state)
         
-        f_x, g_x = controller.cart_pole_dynamics(state, controller.length)
+        f_x, g_x = controller.cart_pole_dynamics(state, length = 1.0, mp = 1.0, mc = 1.0)
         
         
-        u_opt = controller.compute_policy(state)        
+        u_opt = controller.compute_policy(state)   
+   
         
         state_dot = f_x + g_x * u_opt
         state = (state + dt * state_dot).detach()  # Getting a detached tensor after update
@@ -141,7 +140,7 @@ def plot_control_inputs(controller, state_space, title, xlabel, ylabel):
     plt.show()
 
 
-def simulate_cartpole(env, controller, steps=200):
+def simulate_cartpole(env, controller, steps=500):
     observation, info = env.reset()
     
     trajectory = [observation]  # Record the initial state
@@ -237,7 +236,7 @@ if __name__ == "__main__":
     
     net_policy.load_state_dict(torch.load(policy_saved_model))
     
-    clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, length = 1, relaxation_penalty=1.0)
+    clf_controller = Cart_Pole_Joint_Controller(net_nominal, net_policy, length = 1.0, relaxation_penalty=1.0)
 
     env = CartPoleEnv(render_mode="human", mc = 1.0, mp = 1.0, l = 1)
     
@@ -254,19 +253,19 @@ if __name__ == "__main__":
     #initial_states = [torch.tensor([position, np.cos(angle), np.sin(angle), 0. , 0.]) for angle in [-np.pi/8, np.pi/6, np.pi/4] for position in [2.7, 1.2, -2.4]]
 
     # Sample 5 random angles in the negative range and 5 in the positive range avoiding values too close to zero
-    negative_angles = np.random.uniform(low=-np.pi/4, high=-np.pi/10, size=1)
-    positive_angles = np.random.uniform(low=np.pi/10, high=np.pi/4, size=1)
+    negative_angles = np.random.uniform(low=-np.pi/8, high=-np.pi/20, size=5)
+    positive_angles = np.random.uniform(low=np.pi/20, high=np.pi/8, size=5)
     angles = np.concatenate((negative_angles, positive_angles), axis=0)
     np.random.shuffle(angles)  # Shuffle to ensure randomness
     
     # Sample 5 random positions in the negative range and 5 in the positive range avoiding values too close to zero
-    negative_positions = np.random.uniform(low=-4, high=-1, size=1)
-    positive_positions = np.random.uniform(low=1, high=4, size=1)
+    negative_positions = np.random.uniform(low=-2, high=-1, size=5)
+    positive_positions = np.random.uniform(low=1, high=2, size=5)
     positions = np.concatenate((negative_positions, positive_positions), axis=0)
     np.random.shuffle(positions)  # Shuffle to ensure randomness
     
     # Create 10 random initial states
-    initial_states = [torch.tensor([positions[i], np.cos(angles[i]), np.sin(angles[i]), 0., 0.]) for i in range(1)]
+    initial_states = [torch.tensor([positions[i], np.cos(angles[i]), np.sin(angles[i]), 0., 0.]) for i in range(10)]
 
     
     #results = [simulate_trajectory(clf_controller, init_state) for init_state in initial_states]

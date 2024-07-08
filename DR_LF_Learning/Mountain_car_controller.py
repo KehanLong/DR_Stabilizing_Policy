@@ -197,9 +197,6 @@ class MountainCar_Joint_Controller:
         V, V_grad = self.compute_clf(x)
         u = self.compute_policy(x)
         
-        
-
-        
         # Compute V_dot for all xi samples
         V_dot_samples = []
         for xi in xi_samples:
@@ -220,7 +217,7 @@ class MountainCar_Joint_Controller:
         
         
         # Compute the infinity norm
-        V_grad_w_inf_norm = torch.norm(V_grad_w, dim=2, p=float('inf'))
+        V_grad_w_inf_norm = torch.norm(V_grad_w, dim=2, p=2)
         
         # Compute the positive part for loss
         positive_part = torch.relu(r * V_grad_w_inf_norm / beta + V_dot_max + self.relaxation_penalty * V) 
@@ -232,7 +229,7 @@ class MountainCar_Joint_Controller:
         return torch.mean(positive_part)
     
 
-    def dro_lyapunov_derivative_loss_uniform(self, x, xi_samples, r=0.0001, beta=0.1, gamma=0.02):
+    def dro_lyapunov_derivative_loss_uniform(self, x, xi_samples, r=0.00008, beta=0.1, gamma=0.02):
         """
         Computes the DR Lyapunov derivative loss with uniform formulation.
         Args:
@@ -256,7 +253,7 @@ class MountainCar_Joint_Controller:
         # V_grad_w_inf_norm_max = torch.max(torch.linalg.vector_norm(V_grad_w, ord=float('inf')))
 
         # 2-norm
-        V_grad_w_inf_norm_max = torch.max(torch.linalg.vector_norm(V_grad_w, ord=float('inf')))
+        V_grad_w_norm_max = torch.max(torch.linalg.vector_norm(V_grad_w, dim=2))
 
         # print('V_grad_w_max:', V_grad_w_inf_norm_max)
 
@@ -269,24 +266,13 @@ class MountainCar_Joint_Controller:
             V_dot = LfV + LgV * u 
             V_dot_samples.append(V_dot)
             
-        # V_dot_max = V_dot_samples[0]
-        # for V_dot in V_dot_samples[1:]:
-        #     V_dot_max = torch.max(V_dot_max, V_dot)  
+        V_dot_max = V_dot_samples[0]
+        for V_dot in V_dot_samples[1:]:
+            V_dot_max = torch.max(V_dot_max, V_dot)  
 
-        # Compute the LogSumExp approximation of the maximum V_dot among all x samples and xi samples, this is for better gradient and convergence
-        V_dot_stack = torch.stack(V_dot_samples)
-        V_dot_max= torch.logsumexp(V_dot_stack, dim=0)
-
-        # V_grad_w_inf_norm_max_broadcast = V_grad_w_inf_norm_max.repeat(V_dot_max.shape[0], 1)
-
-        # print('V_grad_w_inf_norm:', V_grad_w_inf_norm_max_broadcast)
-
-        # print('V_dot_max:', V_dot_max)
-
-        # print('V:', V.shape)
         
         # Compute the positive part for loss
-        positive_part = torch.relu(r * V_grad_w_inf_norm_max / beta + V_dot_max + self.relaxation_penalty * V)
+        positive_part = torch.relu(r * V_grad_w_norm_max / beta + V_dot_max + self.relaxation_penalty * V)
         
         # Return the loss value
         return torch.mean(positive_part)

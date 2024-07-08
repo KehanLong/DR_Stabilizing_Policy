@@ -27,16 +27,20 @@ from Gymnasium_modified.gymnasium.envs.classic_control.continuous_mountain_car i
 
 import time
 
-def plot_actions(actions1, actions2, title, filename, y_axis_name = "Action Value"):
-    plt.figure(figsize=(10, 6))
-    plt.plot(actions1, label='Baseline Controller')
-    plt.plot(actions2, label='DRO Controller')
-    plt.title(title)
-    plt.xlabel('Time Step')
-    plt.ylabel(y_axis_name)
-    plt.legend()
+
+def plot_values_over_time(data_list, filename, ylabel):
+    plt.figure(figsize=(10, 8))
+    
+    for data in data_list:
+        plt.plot(data, lw=2, alpha=0.6)
+
+    plt.xlabel('Time Steps', fontsize=20)
+    plt.ylabel(ylabel, fontsize=20)
+    #plt.grid(True)
+    
+    plt.legend(fontsize=22)
     plt.savefig(filename, dpi=300)
-    plt.show()
+    plt.tight_layout()
 
 def plot_trajectories(x_data, y_data, title, xlabel, ylabel, xlim = None):
     plt.figure(figsize=(10, 8))
@@ -77,7 +81,7 @@ def plot_trajectories(x_data, y_data, title, xlabel, ylabel, xlim = None):
     return plt.gca().get_xlim()
 
 # Function to run and visualize the mountain car simulation
-def simulate_mountaincar(env, controller, steps=2000):
+def simulate_mountaincar(env, controller, steps=3000):
     observation, info = env.reset()
     
     trajectory = [observation]  # Record the initial state
@@ -108,7 +112,7 @@ def simulate_mountaincar(env, controller, steps=2000):
     return np.array(trajectory), actions, Lyapunov_values
 
 
-def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate_mountaincar, plot_trajectories, plot_actions):
+def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate_mountaincar, plot_trajectories):
     """
     Simulates and plots trajectories for given controllers.
 
@@ -142,6 +146,7 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
         V_values_list = []
 
         for init_state in initial_states:
+            # use 'human' render mode to see the graphics, use 'rgb_array' to save time
             env = Continuous_MountainCarEnv(render_mode="rgb_array", power=0.0012, controller=controller_type, initial_state=init_state)
             trajectory, actions, V_values = simulate_mountaincar(env, controller)
             trajectories.append(trajectory)
@@ -157,6 +162,7 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
         else:
             #plot_trajectories(positions, velocities, f'{controller_type} Controller: Mountain Car Trajectories', 'Position', 'Velocity', xlim=xlim)
             plot_trajectories(positions, velocities, f'{controller_type} Controller: Mountain Car Trajectories', 'Position', 'Velocity')
+            plot_values_over_time(V_values_list, f'{controller_type} Controller: Mountain Car LF', ylabel = "Lyapunov Value")
 
     plt.show()
 
@@ -165,8 +171,8 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
 def main():
     baseline_clf_saved_model = "saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt"
     baseline_policy_model = "saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt"
-    dro_clf_saved_model = "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test2.pt"
-    dro_policy_model = "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test2.pt"
+    dro_clf_saved_model = "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test.pt"
+    dro_policy_model = "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test.pt"
     
     n_input = 3
     n_hidden = 16
@@ -196,7 +202,7 @@ def main():
     # plot_actions(actions1, actions2, "Comparison of Control Inputs Over Time", "mountain_car_controller_comparison.png")
     # plot_actions(V_values1, V_values2, "Comparison of Lyapunov Function Values Over Time", "mountain_car_compare_V_value.png", "Lyapunov value")
     
-    simulate_and_plot_trajectories(baseline_clf_controller, dro_clf_controller, simulate_mountaincar, plot_trajectories, plot_actions)
+    simulate_and_plot_trajectories(baseline_clf_controller, dro_clf_controller, simulate_mountaincar, plot_trajectories)
 
 if __name__ == "__main__":
     main()

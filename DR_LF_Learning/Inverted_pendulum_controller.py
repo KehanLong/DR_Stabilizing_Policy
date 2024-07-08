@@ -270,7 +270,7 @@ class InvertedPendulum_Joint_Controller:
         return W  
     
     
-    def dro_lyapunov_derivative_loss_(self, x, xi_samples, r=0.01, beta=0.1, gamma=0.02):
+    def dro_lyapunov_derivative_loss_(self, x, xi_samples, r=0.01, beta=0.1):
         """
         Computes the DR Lyapunov derivative loss.
         
@@ -322,7 +322,7 @@ class InvertedPendulum_Joint_Controller:
 
     
       
-    def dro_lyapunov_derivative_loss_uniform(self, x, xi_samples, r=0.003, beta=0.1, gamma=0.02):
+    def dro_lyapunov_derivative_loss_uniform(self, x, xi_samples, r=0.004, beta=0.1):
         """
         Computes the DR Lyapunov derivative loss with uniform formulation.
         Args:
@@ -352,12 +352,12 @@ class InvertedPendulum_Joint_Controller:
             V_dot = LfV + LgV * u
             V_dot_samples.append(V_dot)
 
-        # Compute the LogSumExp approximation of the maximum V_dot among all x samples and xi samples
-        V_dot_stack = torch.stack(V_dot_samples)
-        V_dot_max = torch.logsumexp(V_dot_stack, dim=0)
+        V_dot_max = V_dot_samples[0]
+        for V_dot in V_dot_samples[1:]:
+            V_dot_max = torch.max(V_dot_max, V_dot)  
 
 
         # Compute the loss
-        positive_part = torch.relu(r * V_grad_w_norm_max / beta + V_dot_max + self.relaxation_penalty * V) 
+        positive_part = torch.relu(r * V_grad_w_norm_max / beta + (V_dot_max + self.relaxation_penalty * V))
 
         return torch.mean(positive_part)

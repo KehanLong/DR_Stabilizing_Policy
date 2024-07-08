@@ -19,7 +19,7 @@ from Inverted_pendulum_controller import InvertedPendulum_Joint_Controller
 
 
 
-def simulate_joint_trajectory(controller, initial_state, time_steps=500, dt=0.02):
+def simulate_joint_trajectory(controller, initial_state, time_steps=2000, dt=0.02):
     trajectory = [initial_state.detach().numpy().reshape(1,-1)]  # This ensures it starts as a 2D array
     state = initial_state.clone().detach().float()  # Starting from a detached copy
     state.requires_grad = True
@@ -221,18 +221,18 @@ def simulate_and_plot_trajectories(baseline_controller, dro_controller, simulate
     - plot_values_over_time: Function to plot values over time.
     """
     # Sample angles and velocities
-    negative_angles = np.random.uniform(low=-np.pi, high=-np.pi/5, size=5)
-    positive_angles = np.random.uniform(low=np.pi/5, high=np.pi, size=5)
+    negative_angles = np.random.uniform(low=-np.pi, high=-np.pi/3, size=5)
+    positive_angles = np.random.uniform(low=np.pi/3, high=np.pi, size=5)
     angles = np.concatenate((negative_angles, positive_angles), axis=0)
     np.random.shuffle(angles)  # Shuffle to ensure randomness
 
-    negative_velocity = np.random.uniform(low=-6, high=-1.0, size=2)
-    positive_velocity = np.random.uniform(low=1.0, high=6, size=2)
+    negative_velocity = np.random.uniform(low=-6, high=-1.2, size=5)
+    positive_velocity = np.random.uniform(low=1.2, high=6, size=5)
     velocity = np.concatenate((negative_velocity, positive_velocity), axis=0)
     np.random.shuffle(velocity)  # Shuffle to ensure randomness
 
     # Create initial states
-    initial_states = [torch.tensor([np.sin(angles[i]), np.cos(angles[i]), velocity[i]]) for i in range(4)]
+    initial_states = [torch.tensor([np.sin(angles[i]), np.cos(angles[i]), velocity[i]]) for i in range(10)]
     
     #print('initial_states:', initial_states)
 
@@ -294,8 +294,8 @@ if __name__ == "__main__":
     
     
     # load dro controller 
-    dro_clf_saved_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test1.pt"
-    dro_policy_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test1.pt"
+    dro_clf_saved_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_pointwise.pt"
+    dro_policy_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_pointwise.pt"
 
     
     

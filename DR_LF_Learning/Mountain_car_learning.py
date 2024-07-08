@@ -9,6 +9,8 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
+import time
+
 
 from PolicyNet import PolicyNet
 from lyapunov_net import LyapunovNet
@@ -44,7 +46,7 @@ def train_clf_nn_controller():
     
     n_control = 1
 
-    num_epochs = 8000
+    num_epochs = 5000
 
     learning_rate = 0.005
     loss_threshold = 1e-3
@@ -115,8 +117,8 @@ def train_clf_nn_controller():
     
 
 
-    #for model_type in ['nominal', 'dro']:
-    for model_type in ['dro']:
+    for model_type in ['nominal', 'dro']:
+    
         print(f"\nTraining {model_type} model")
 
         # Reset model and optimizer for each training type
@@ -130,6 +132,8 @@ def train_clf_nn_controller():
             # Load the trained weights from the nominal model
             net_nominal.load_state_dict(torch.load("saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt"))
             net_policy.load_state_dict(torch.load("saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt"))
+
+            start_time = time.time()
 
         
         # Instantiate the controller with specific control bounds
@@ -148,8 +152,11 @@ def train_clf_nn_controller():
                 # Compute the loss for all samples (baseline training)
                 delta_opt = clf_controller.lyapunov_derivative_loss(x_train, xi_samples)
             else:  # 'dro'
-                # Compute the loss for all samples (DRO training)
-                delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
+                # Compute the loss for all samples (DRO pointwise training)
+                delta_opt = clf_controller.dro_lyapunov_derivative_loss_(x_train, xi_samples)
+
+                # Compute the loss for all samples (DRO uniform training)
+                #delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
 
             total_loss = delta_opt
             total_loss.backward()
@@ -169,8 +176,9 @@ def train_clf_nn_controller():
             torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_clf.pt")
             torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/baseline_controller.pt")
         else:  # 'dro'
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test2.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test2.pt")
+            print('time_needed_for_training:', time.time() - start_time)
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_clf_test.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/mountain_car/dro_controller_test.pt")
             
             
             
@@ -289,6 +297,7 @@ def evaluate_clf_controller(clf_controller, file_prefix='Mountain'):
 
 if __name__ == "__main__":
     trained_controllers = train_clf_nn_controller()
+    
     # nominal_controller = trained_controllers['nominal']
     # dro_controller = trained_controllers['dro']
     #evaluate_clf_controller(nominal_controller)

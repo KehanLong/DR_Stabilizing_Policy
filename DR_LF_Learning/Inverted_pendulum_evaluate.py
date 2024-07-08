@@ -154,7 +154,7 @@ def plot_value_functions(lyapunov_values, ppo_values, sac_values, title, filenam
 
 
 # Function to run and visualize the pendulum simulation
-def simulate_pendulum(env, controller, steps=1200, filename='dr_trajectory.npy'):
+def simulate_pendulum(env, controller, steps=200, filename='dr_trajectory.npy'):
     observation, info = env.reset()
     
     
@@ -204,8 +204,8 @@ if __name__ == "__main__":
     
     
     
-    dro_clf_saved_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test1.pt"
-    dro_policy_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test1.pt"
+    dro_clf_saved_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test.pt"
+    dro_policy_model = "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test.pt"
     
     
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

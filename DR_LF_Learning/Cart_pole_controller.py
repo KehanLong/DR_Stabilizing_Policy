@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Sep 24 19:22:24 2023
 
 @author: kehan
 """
@@ -12,7 +11,7 @@ import numpy as np
 
     
 class Cart_Pole_Joint_Controller:
-    def __init__(self, net, net_policy = None, length = 1.0, relaxation_penalty = 1.0, control_bounds = 15.0):
+    def __init__(self, net, net_policy = None, length = 1.0, relaxation_penalty = 1.0, control_bounds = 10.0):
         self.net = net
         self.net_policy = net_policy
         
@@ -24,20 +23,15 @@ class Cart_Pole_Joint_Controller:
            
     
     # vectorized version to enable batch training
-    def cart_pole_dynamics(self, x, length = 1.0):
+    def cart_pole_dynamics(self, x, length = 1.0, mp = 1.0, mc = 1.0):
         
         
         # training baseline parameters
         g = 9.81  # gravity
         
-        mp = 1.0  # mass of pole
-        mc = 1.0 # mass of cart
+        mp = mp  # mass of pole
+        mc = mc # mass of cart
         l = length  # length to center of mass of pendulum
-        #testing parameters, with uncertainty
-        # mp = 4.8  # mass of pole
-        # mc = 0.7 # mass of cart
-        # l = 1.8  # length to center of mass of pendulum
-        # g = 9.81  # gravity
         
         if len(x.shape) == 1:  # If x is a single sample and not a batch
             x = x.unsqueeze(0)  # Add a batch dimension
@@ -50,14 +44,14 @@ class Cart_Pole_Joint_Controller:
         theta_dot = x[:, 4]
     
         denominator1 = mc + mp * sin_theta**2
-        denominator2 = l * (mc + mp * sin_theta**2)
+        denominator2 = l * denominator1
     
-        theta_double_dot = - (mp * l * theta_dot**2 * sin_theta * cos_theta + (mc + mp) * g * sin_theta) / denominator2
-        x_double_dot = (mp * sin_theta * (l * theta_dot**2 + g * cos_theta)) / denominator1
+        theta_double_dot = (- mp * l * theta_dot**2 * sin_theta * cos_theta + (mc + mp) * g * sin_theta) / denominator2
+        x_double_dot = (mp * sin_theta * (-l * theta_dot**2 + g * cos_theta)) / denominator1
 
     
         f_x = torch.stack([pos_dot, -sin_theta * theta_dot, cos_theta * theta_dot, x_double_dot, theta_double_dot], dim=1).to(x.device)
-        g_x = torch.stack([torch.zeros_like(sin_theta), torch.zeros_like(sin_theta), torch.zeros_like(sin_theta),  1 / denominator1, -cos_theta / denominator2], dim=1).to(x.device)
+        g_x = torch.stack([torch.zeros_like(sin_theta), torch.zeros_like(sin_theta), torch.zeros_like(sin_theta),  1 / denominator1, cos_theta / denominator2], dim=1).to(x.device)
     
         return f_x, g_x
     
@@ -76,26 +70,6 @@ class Cart_Pole_Joint_Controller:
         if len(x.shape) == 1:  # If x is a single sample and not a batch
             x = x.unsqueeze(0)  # Add a batch dimension
         
-        '''
-        following is a central symmetric policy
-        '''
-    
-        # Compute the policy for the absolute state values
-        # mirrored_state = torch.stack([-x[:, 0], x[:, 1], -x[:,2], -x[:, 3], -x[:, 4]], dim=1)
-    
-        # origin = [0, 1, 0, 0, 0]
-        # #origin_tensor = torch.tensor(origin, dtype=torch.float32).unsqueeze(0).to(x.device)
-        # u_pos = self.net_policy(x) 
-        # u_neg = self.net_policy(mirrored_state) 
-    
-        # # Adjust the sign of the policy
-        # u_unbounded = u_pos - u_neg
-    
-        # # Clamp the control action
-        # u_bounded = torch.clamp(u_unbounded, min_val, max_val)
-
-
-
         '''
         following is the baseline (no symmetry)
         '''
@@ -163,7 +137,6 @@ class Cart_Pole_Joint_Controller:
         
         V_dot = LfV + LgV * u 
         
-        #positive_part = torch.relu(V_dot + gamma * torch.norm(x))
         
         
         positive_part = torch.relu(V_dot + self.relaxation_penalty * V)

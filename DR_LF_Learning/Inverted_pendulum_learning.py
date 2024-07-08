@@ -46,9 +46,9 @@ def train_clf_nn_controller():
     
     n_control = 1
 
-    num_epochs = 600
+    num_epochs = 6000
 
-    learning_rate = 0.002
+    learning_rate = 0.0013
     loss_threshold = 1e-4
     batch_size = 128
     
@@ -76,8 +76,6 @@ def train_clf_nn_controller():
     
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    device = torch.device("cpu")
 
     
     # Generate training samples
@@ -158,10 +156,10 @@ def train_clf_nn_controller():
                 # Compute the loss for all samples (DRO training)
                 
                 # point-wise
-                # delta_opt = clf_controller.dro_lyapunov_derivative_loss_(x_train, xi_samples)
+                delta_opt = clf_controller.dro_lyapunov_derivative_loss_(x_train, xi_samples)
 
                 # uniform
-                delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
+                # delta_opt = clf_controller.dro_lyapunov_derivative_loss_uniform(x_train, xi_samples)
 
             total_loss = delta_opt
             total_loss.backward()
@@ -181,8 +179,8 @@ def train_clf_nn_controller():
             torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/baseline_clf.pt")
             torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/baseline_controller.pt")
         else:  # 'dro'
-            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test1.pt")
-            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test1.pt")
+            torch.save(net_nominal.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_clf_test.pt")
+            torch.save(net_policy.state_dict(), "saved_models/joint_clf_controller_models/inverted_pendulum/dro_controller_test.pt")
             
             
             

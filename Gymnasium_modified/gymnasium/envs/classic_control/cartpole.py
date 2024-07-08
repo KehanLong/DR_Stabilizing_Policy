@@ -101,7 +101,7 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         self.kinematics_integrator = "euler"
 
         # Angle at which to fail the episode
-        self.theta_threshold_radians = 30 * 12 * math.pi / 360
+        self.theta_threshold_radians = 3 * 12 * math.pi / 360
         self.x_threshold = 4
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation
@@ -109,16 +109,16 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         high = np.array(
             [
                 self.x_threshold * 2,
-                np.finfo(np.float32).max,
+                np.finfo(np.float64).max,
                 self.theta_threshold_radians * 2,
-                np.finfo(np.float32).max,
+                np.finfo(np.float64).max,
             ],
-            dtype=np.float32,
+            dtype=np.float64,
         )
 
-        self.action_space = spaces.Box(low=-self.force_mag, high=self.force_mag, shape=(1,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-self.force_mag, high=self.force_mag, shape=(1,), dtype=np.float64)
         
-        self.observation_space = spaces.Box(-high, high, dtype=np.float32)
+        self.observation_space = spaces.Box(-high, high, dtype=np.float64)
 
         self.render_mode = render_mode
 
@@ -144,8 +144,8 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         denominator2 = self.length * (self.masscart + self.masspole * sintheta**2)
 
 
-        theta_double_dot = (- self.masspole * self.length * theta_dot**2 * sintheta * costheta + (self.masscart + self.masspole) * self.gravity * sintheta) / denominator2 - costheta * force / denominator2
-        x_double_dot = self.masspole * sintheta * (self.length * theta_dot**2 - self.gravity * costheta) / denominator1 + 1 * force / denominator1
+        theta_double_dot = (- self.masspole * self.length * theta_dot**2 * sintheta * costheta + (self.masscart + self.masspole) * self.gravity * sintheta) / denominator2 + (costheta * force) / denominator2
+        x_double_dot = self.masspole * sintheta * (-self.length * theta_dot**2 + self.gravity * costheta) / denominator1 + force / denominator1
 
         state = np.array([x, costheta, sintheta, x_dot, theta_dot])
         state_dot = np.array([x_dot, -sintheta * theta_dot, costheta * theta_dot, x_double_dot, theta_double_dot])
@@ -153,6 +153,8 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
 
         x, costheta, sintheta, x_dot, theta_dot = state
         theta = math.atan2(sintheta, costheta)
+
+        self.state = (x, x_dot, np.clip(theta, -self.theta_threshold_radians , self.theta_threshold_radians), theta_dot)
 
         self.state = (x, x_dot, theta, theta_dot)
 
@@ -196,7 +198,7 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         #self.state = self.np_random.uniform(low=low, high=high, size=(4,))
         
         #reset the state determistically
-        self.state = np.array([0.0,-3.0, 0.0, 0.0], dtype=np.float32)
+        self.state = np.array([-1.0, 0.0, np.pi/20, 0.0], dtype=np.float32)
         
         self.steps_beyond_terminated = None
 
