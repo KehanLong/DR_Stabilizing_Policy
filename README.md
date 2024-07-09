@@ -1,6 +1,16 @@
 Distributionally Robust Lyapunov-stable Policy Learning
 ========================================================================
-This repository contains code for the work "Distributionally Robust Policy and Lyapunov-Certificate Learning".
+This repository contains implementations for the work  <a href="https://arxiv.org/abs/2404.03017">"Distributionally Robust Policy and Lyapunov-Certificate Learning"</a>.
+
+If you find our work useful, please consider citing our paper:
+```
+@article{long2024distributionally,
+  title={Distributionally Robust Policy and {L}yapunov-Certificate Learning},
+  author={Long, Kehan and Cortes, Jorge and Atanasov, Nikolay},
+  journal={arXiv preprint arXiv:2404.03017},
+  year={2024}
+}
+
 
 # Clone Repo
 ```bash
