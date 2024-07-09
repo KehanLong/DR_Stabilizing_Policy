@@ -10,7 +10,7 @@ If you find our work useful, please consider citing our paper:
   journal={arXiv preprint arXiv:2404.03017},
   year={2024}
 }
-
+```
 
 # Clone Repo
 ```bash
