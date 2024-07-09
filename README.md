@@ -28,12 +28,6 @@ Activate the environment:
 conda activate DR_Stabilizing_Policy
 ```
 
-To formally verify the network: please install auto_LiRPA and alpha-beta-CROWN:
-
-git clone --recursive https://github.com/Verified-Intelligence/alpha-beta-CROWN.git
-(cd alpha-beta-CROWN/auto_LiRPA && pip install -e .)
-(cd alpha-beta-CROWN/complete_verifier && pip install -r requirements.txt)
-
 Finally, go to the project directory
 ```
 cd DR_LF_Learning
